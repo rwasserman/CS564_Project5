@@ -90,11 +90,11 @@ def parseJson(json_file):
             parseSeller(item)
             parseBids(item)
             parseItem(item)
-            f.write("|".join(map("", item))) #lamba on map as func?
+            f.write("|".join(map(lambda x:x, item))) #lamba on map as func?
             f.write("\n")
             pass
 """"
-Seller table is (Location, Country, Rating(PK), UserID(PK))
+Seller table is (Location, Country, Rating, UserID(PK))
 """"
 def parseSeller(table):
     with open("sellers.dat", "a") as f:
@@ -103,42 +103,62 @@ def parseSeller(table):
         seller.append(escapeQuotations(table.get("Country", "NULL")))
         seller.append(table["Rating"])
         seller.append(escapeQuotations(table["Seller"]["UserID"])) #not sure if they is right
-        f.write("|".join(map( "", seller)))
+        f.write("|".join(map(lambda x:x, seller)))
         f.write("\n")
 
 """"
-Item table is (Currently, First_Bid, Started, Name(PK), Category, ItemID(PK), 
+Item table is (Currently, First_Bid, Started, Name, Category, ItemID(PK), 
 Description, Ends, Buy_Price (Optional), Number_of_bids(Optional))
 """"
 def parseItem(table):
     with open("sellers.dat", "a") as f:
         item = []
+        item.append(parseCategories(item))
         item.append(transformDollar(table.get("Currently", "NULL")))
         item.append(transformDollar(table["First_Bid"]))
         item.append(transformDttm(table["Started"]))
         item.append(transformDttm(table["Ends"]))
-        item.append(escapeQuotations(table["Category"]))#what about multiple categories?
         item.append(escapeQuotations(table["Description"]))
         item.append(escapeQuotations(table["Name"]))
         item.append(table["ItemID"])
         item.append(transformDollar(table.get("Buy_Price", "NULL")))
         item.append(table["Number_of_Bids"])
-        f.write("|".join(map("", item)))
+        f.write("|".join(map(lambda x:x, item)))
         f.write("\n")
 
+""""
+Categories table is (Category(PK)) and is attached to the Item entity 
+""""
+def parseCategories(table):
+    with open("categories.dat", "a") as f: 
+        categories = table.get("Category")
+        if categories != None:
+            data_set = set()
+            for category in categories:
+                data = []
+                data.append(escapeQuotations(category["Category"]))
+            f.write("|".join(map(lambda x:x, data_set)))
+            f.write("\n")
+
+""""
+Bids table is (Amount(PK), Time(PK)) and uses the Bidder entity 
+attached to each bid through the relationship of Bids On
+""""
 def parseBids(table):
     with open("bids.dat", "a") as f:
         bids = table.get("Bids")
         if bids != None:
+            data_set = set()
             for bid in bids:
                 data = []
                 data.append(transformDttm(bid["Bid"]["Time"]))
                 data.append(transformDollar(bid["Bid"]["Amount"]))
                 data.append(parseBidder(bid))
-                f.write("|".join(map(lambda x:x, data)))
-                f.write("\n")
+                data_set.add("|".join(data))
+            f.write("|".join(map(lambda x:x, data_set)))
+            f.write("\n")
 """"
-Bidder table is (Location(Optional), Country(Optional), UserID(PK), Rating(PK))
+Bidder table is (Location(Optional), Country(Optional), UserID(PK), Rating)
 """"
 def parseBidder(table):
     with open("bidders.dat", "a") as f:
@@ -147,7 +167,7 @@ def parseBidder(table):
         bidder.append(table["Rating"])
         bidder.append(escapeQuotations(table.get("Location", "NULL")))
         bidder.append(escapeQuotations(table.get("Country", "NULL")))
-        f.write("|".join(map("", bidder)))
+        f.write("|".join(map(lambda x:x, bidder)))
         f.write("\n")
 
 """"
@@ -155,7 +175,7 @@ def parseBidder(table):
 2. Surround all strings with double quotes.
 """"
 def escapeQuotations(element):
-    if element == NULL:
+    if element == None:
         return element
     return '\"' +  element + '\"' #not sure if this is correct
     

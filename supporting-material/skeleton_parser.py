@@ -24,6 +24,7 @@ you; the rest is up to you!
 Happy parsing!
 """
 
+from asyncio.windows_events import NULL
 import sys
 from json import loads
 from re import sub
@@ -82,8 +83,66 @@ def parseJson(json_file):
             given `json_file' and generate the necessary .dat files to generate
             the SQL tables based on your relation design
             """
-            pass
+            # make item as a dictionary so it can use the key value pair 
+            # to connect attributes and entities ex) Name: "John"
+            # open with mode as append("a") will generate .dat file
+            # need NULL coverter() and escapingQuotes()
 
+            f.write("|".join(map(item))) #lamba on map as func?
+            f.write("\n")
+            pass
+""""
+Seller table is (Location, Country, Rating(PK), UserID(PK))
+""""
+def parseSeller(table):
+    with open("sellers.dat", "a") as f:
+        seller = []
+        seller.append(escapeQuotations(table["Location"]))
+        seller.append(escapeQuotations(table["Country"]))
+        seller.append(table["Rating"])
+        seller.append(table["Seller"]["UserID"])
+        f.write("|".join(map( "", seller)))
+        f.write("\n")
+
+""""
+Item table is (Currently, First_Bid, Started, Name(PK), Category, ItemID(PK), 
+Description, Ends, Buy_Price (Optional), Number_of_bids(Optional))
+""""
+def parseItem(table):
+    with open("sellers.dat", "a") as f:
+        item = []
+        item.append(transformDollar(table.get("Currently", "NULL")))
+        item.append(transformDollar(table["First_Bid"]))
+        item.append(transformDttm(table["Started"]))
+        item.append(transformDttm(table["Ends"]))
+        item.append(escapeQuotations(table["Category"]))
+        item.append(escapeQuotations(table["Description"]))
+        item.append(escapeQuotations(table["Name"]))
+        item.append(table["ItemID"])
+        item.append(transformDollar(table["Buy_Price"]))
+        item.append(table["Number_of_Bids"])
+        f.write("|".join(map("", item)))
+        f.write("\n")
+
+""""
+Bidder table is (Location(Optional), Country(Optional), UserID(PK), Rating(PK))
+""""
+def parseBidder(table):
+    with open("bidders.dat", "a") as f:
+        bidder = []
+        bidder.append(table["UserID"])
+        bidder.append(table["Rating"])
+        bidder.append(escapeQuotations(table["Location"]))
+        bidder.append(escapeQuotations(table["Country"]))
+        f.write("|".join(map("", bidder)))
+        f.write("\n")
+
+
+def escapeQuotations(element):
+    if element == NULL:
+        return element
+    return '\"' +  element + '\"'
+    
 """
 Loops through each json files provided on the command line and passes each file
 to the parser

@@ -100,7 +100,7 @@ def parseSeller(table):
         seller.append(escapeQuotations(table["Location"]))
         seller.append(escapeQuotations(table["Country"]))
         seller.append(table["Rating"])
-        seller.append(table["Seller"]["UserID"])
+        seller.append(escapeQuotations(table["Seller"]["UserID"])) #not sure if they is right
         f.write("|".join(map( "", seller)))
         f.write("\n")
 
@@ -115,7 +115,7 @@ def parseItem(table):
         item.append(transformDollar(table["First_Bid"]))
         item.append(transformDttm(table["Started"]))
         item.append(transformDttm(table["Ends"]))
-        item.append(escapeQuotations(table["Category"]))
+        item.append(escapeQuotations(table["Category"]))#what about multiple categories?
         item.append(escapeQuotations(table["Description"]))
         item.append(escapeQuotations(table["Name"]))
         item.append(table["ItemID"])
@@ -130,18 +130,21 @@ Bidder table is (Location(Optional), Country(Optional), UserID(PK), Rating(PK))
 def parseBidder(table):
     with open("bidders.dat", "a") as f:
         bidder = []
-        bidder.append(table["UserID"])
+        bidder.append(escapeQuotations(table["UserID"]))
         bidder.append(table["Rating"])
         bidder.append(escapeQuotations(table["Location"]))
         bidder.append(escapeQuotations(table["Country"]))
         f.write("|".join(map("", bidder)))
         f.write("\n")
 
-
+""""
+1. Escape every instance of a double quote with another double quote.
+2. Surround all strings with double quotes.
+""""
 def escapeQuotations(element):
     if element == NULL:
         return element
-    return '\"' +  element + '\"'
+    return '\"' +  element + '\"' #not sure if this is correct
     
 """
 Loops through each json files provided on the command line and passes each file

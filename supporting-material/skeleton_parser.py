@@ -87,8 +87,10 @@ def parseJson(json_file):
             # to connect attributes and entities ex) Name: "John"
             # open with mode as append("a") will generate .dat file
             # need NULL coverter() and escapingQuotes()
-
-            f.write("|".join(map(item))) #lamba on map as func?
+            parseSeller(item)
+            parseBids(item)
+            parseItem(item)
+            f.write("|".join(map("", item))) #lamba on map as func?
             f.write("\n")
             pass
 """"
@@ -97,8 +99,8 @@ Seller table is (Location, Country, Rating(PK), UserID(PK))
 def parseSeller(table):
     with open("sellers.dat", "a") as f:
         seller = []
-        seller.append(escapeQuotations(table["Location"]))
-        seller.append(escapeQuotations(table["Country"]))
+        seller.append(escapeQuotations(table.get("Location", "NULL")))
+        seller.append(escapeQuotations(table.get("Country", "NULL")))
         seller.append(table["Rating"])
         seller.append(escapeQuotations(table["Seller"]["UserID"])) #not sure if they is right
         f.write("|".join(map( "", seller)))
@@ -119,11 +121,22 @@ def parseItem(table):
         item.append(escapeQuotations(table["Description"]))
         item.append(escapeQuotations(table["Name"]))
         item.append(table["ItemID"])
-        item.append(transformDollar(table["Buy_Price"]))
+        item.append(transformDollar(table.get("Buy_Price", "NULL")))
         item.append(table["Number_of_Bids"])
         f.write("|".join(map("", item)))
         f.write("\n")
 
+def parseBids(table):
+    with open("bids.dat", "a") as f:
+        bids = table.get("Bids")
+        if bids != None:
+            for bid in bids:
+                data = []
+                data.append(transformDttm(bid["Bid"]["Time"]))
+                data.append(transformDollar(bid["Bid"]["Amount"]))
+                data.append(parseBidder(bid))
+                f.write("|".join(map(lambda x:x, data)))
+                f.write("\n")
 """"
 Bidder table is (Location(Optional), Country(Optional), UserID(PK), Rating(PK))
 """"
@@ -132,8 +145,8 @@ def parseBidder(table):
         bidder = []
         bidder.append(escapeQuotations(table["UserID"]))
         bidder.append(table["Rating"])
-        bidder.append(escapeQuotations(table["Location"]))
-        bidder.append(escapeQuotations(table["Country"]))
+        bidder.append(escapeQuotations(table.get("Location", "NULL")))
+        bidder.append(escapeQuotations(table.get("Country", "NULL")))
         f.write("|".join(map("", bidder)))
         f.write("\n")
 

@@ -93,9 +93,9 @@ def parseJson(json_file):
             f.write("|".join(map(lambda x:x, item))) #lamba on map as func?
             f.write("\n")
             pass
-""""
+"""
 Seller table is (Location, Country, Rating, UserID(PK))
-""""
+"""
 def parseSeller(table):
     with open("sellers.dat", "a") as f:
         seller = []
@@ -106,10 +106,10 @@ def parseSeller(table):
         f.write("|".join(map(lambda x:x, seller)))
         f.write("\n")
 
-""""
+"""
 Item table is (Currently, First_Bid, Started, Name, Category, ItemID(PK), 
 Description, Ends, Buy_Price (Optional), Number_of_bids(Optional))
-""""
+"""
 def parseItem(table):
     with open("sellers.dat", "a") as f:
         item = []
@@ -126,9 +126,9 @@ def parseItem(table):
         f.write("|".join(map(lambda x:x, item)))
         f.write("\n")
 
-""""
+"""
 Categories table is (Category(PK)) and is attached to the Item entity 
-""""
+"""
 def parseCategories(table):
     with open("categories.dat", "a") as f: 
         categories = table.get("Category")
@@ -140,10 +140,10 @@ def parseCategories(table):
             f.write("|".join(map(lambda x:x, data_set)))
             f.write("\n")
 
-""""
+"""
 Bids table is (Amount(PK), Time(PK)) and uses the Bidder entity 
 attached to each bid through the relationship of Bids On
-""""
+"""
 def parseBids(table):
     with open("bids.dat", "a") as f:
         bids = table.get("Bids")
@@ -157,9 +157,9 @@ def parseBids(table):
                 data_set.add("|".join(data))
             f.write("|".join(map(lambda x:x, data_set)))
             f.write("\n")
-""""
+"""
 Bidder table is (Location(Optional), Country(Optional), UserID(PK), Rating)
-""""
+"""
 def parseBidder(table):
     with open("bidders.dat", "a") as f:
         bidder = []
@@ -170,10 +170,10 @@ def parseBidder(table):
         f.write("|".join(map(lambda x:x, bidder)))
         f.write("\n")
 
-""""
+"""
 1. Escape every instance of a double quote with another double quote.
 2. Surround all strings with double quotes.
-""""
+"""
 def escapeQuotations(element):
     if element == None:
         return element

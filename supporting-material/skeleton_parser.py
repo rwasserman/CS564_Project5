@@ -24,6 +24,7 @@ you; the rest is up to you!
 Happy parsing!
 """
 
+from ast import expr_context
 import sys
 from json import loads
 from re import sub
@@ -91,7 +92,7 @@ def parseJson(json_file):
             parseBids(item)
             parseBidder(item)
             parseItem(item)
-           # parseCategories(item)
+            parseCategories(item)
             pass
 """
 Seller table is (Location, Country, Rating, UserID(PK))
@@ -102,7 +103,11 @@ def parseSeller(table):
         seller = []
         seller.append(escapeQuotations(table.get("Location", "NULL")))
         seller.append(escapeQuotations(table.get("Country", "NULL")))
-        seller.append(table.get("Rating")) #TODO: Rating key does not exist
+        try:
+            rating = table["Seller"]["Rating"]
+        except:
+            rating = escapeQuotations("NULL")
+        seller.append(rating) #TODO: Rating key does not exist
         seller.append(escapeQuotations(table["Seller"]["UserID"])) #not sure if this is right
         f.write(columnSeparator.join(map(lambda x:x, seller)))
         f.write("\n")
@@ -132,15 +137,13 @@ Categories table is (Category(PK)) and is attached to the Item entity
 def parseCategories(table):
     with open("categories.txt", "a") as f:
         categories = table.get("Category")
-        data_set = set()
         for category in categories:
             if categories != None:
                 item = []
                 item.append(table["ItemID"])
                 item.append(escapeQuotations(category))
-                data_set.add(item)
-            f.write(columnSeparator.join(map(lambda x:x, data_set)))
-            f.write("\n")
+                f.write(columnSeparator.join(map(lambda x:x, item)))
+                f.write("\n")
 
 """
 Bids table is (Amount(PK), Time(PK)) and uses the Bidder entity 

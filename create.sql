@@ -1,23 +1,23 @@
-drop table if exists Item;
+drop table if exists Items;
 drop table if exists Sellers;
 drop table if exists SoldBy;
 drop table if exists Categories;
 drop table if exists Bids;
 drop table if exists Bidders;
 
-create table Item (ItemID INT NOT NULL, Name VARCHAR(256) NOT NULL, Currently
-    VARCHAR(256) NOT NULL, First_Bid VARCHAR(256) NOT NULL, Started VARCHAR(256) NOT NULL, Description VARCHAR(256) NOT NULL,
-    Ends VARCHAR(256) NOT NULL, Buy_Price VARCHAR(256), Number_Of_Bids INT NOT NULL, PRIMARY KEY(ItemID) );
+create table Items (Currently_Var VARCHAR(256) NOT NULL, First_Bid_Var VARCHAR(256) NOT NULL, Started_Var VARCHAR(256) NOT NULL, 
+    Ends_Var VARCHAR(256) NOT NULL, Description_Var VARCHAR(256) NOT NULL, Name_Var VARCHAR(256) NOT NULL, ItemID_Var INT NOT NULL,     
+    Buy_Price_Var VARCHAR(256), Number_Of_Bids_Var INT NOT NULL, PRIMARY KEY(ItemID_Var) );
 
-create table Sellers (UserID INT NOT NULL, Rating VARCHAR(256) NOT NULL, Location VARCHAR(256) NOT NULL, Country CHAR(256) NOT NULL, primary key (UserID) );
+create table Sellers (UserID_Var VARCHAR(256) NOT NULL, Location_Var VARCHAR(256) NOT NULL, Country_Var CHAR(256) NOT NULL, Rating_Var VARCHAR(256),  primary key (UserID_Var) );
 
-create table SoldBy (UserID VARCHAR(256) NOT NULL, ItemID INT NOT NULL, primary key(UserID, ItemID) );
+create table SoldBy (UserID_Var VARCHAR(256) NOT NULL, ItemID_Var INT NOT NULL, primary key(UserID_Var, ItemID_Var) );
 
-create table Categories (ItemID INT NOT NULL, Category VARCHAR(256) NOT NULL, primary key(Category), foreign key(ItemID) references Item(ItemID) );
+create table Categories (ItemID_Var INT NOT NULL, Category_Var VARCHAR(256) NOT NULL, foreign key(ItemID_Var), primary key(Category_Var), references Items(ItemID_Var) );
 
-create table Bids (ItemID INT NOT NULL, UserID VARCHAR(256) NOT NULL, Time_Var VARCHAR(256) NOT NULL, Amount VARCHAR(256) NOT NULL, primary key(Time_Var, Amount), 
-    foreign key(ItemID) references Item(ItemID), foreign key(UserID) references Bidder(UserID) );
+create table Bids (ItemID_Var INT NOT NULL, UserID_Var VARCHAR(256) NOT NULL, Time_Var VARCHAR(256) NOT NULL, Amount_Var VARCHAR(256) NOT NULL, primary key(Time_Var, Amount_Var), 
+    foreign key(ItemID_Var) references Items(ItemID_Var), foreign key(UserID_Var) references Bidder(UserID_Var) );
 
-create table Bidders (UserID VARCHAR(256) NOT NULL, Rating INT NOT NULL, Country VARCHAR(256), Location_Var VARCHAR(256), primary key(UserID) );
+create table Bidders (UserID_Var VARCHAR(256) NOT NULL, Rating_Var INT NOT NULL, Country_Var VARCHAR(256), Location_Var VARCHAR(256), primary key(UserID_Var) );
 
 

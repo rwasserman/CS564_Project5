@@ -24,10 +24,10 @@ you; the rest is up to you!
 Happy parsing!
 """
 
-from asyncio.windows_events import NULL
 import sys
 from json import loads
 from re import sub
+import os
 
 columnSeparator = "|"
 
@@ -89,21 +89,22 @@ def parseJson(json_file):
             # need NULL coverter() and escapingQuotes()
             parseSeller(item)
             parseBids(item)
+            parseBidder(item)
             parseItem(item)
-            f.write("|".join(map(lambda x:x, item))) #lamba on map as func?
-            f.write("\n")
+           # parseCategories(item)
             pass
 """
 Seller table is (Location, Country, Rating, UserID(PK))
 """
 def parseSeller(table):
-    with open("sellers.dat", "a") as f:
+
+    with open("sellers.txt", "a") as f:
         seller = []
         seller.append(escapeQuotations(table.get("Location", "NULL")))
         seller.append(escapeQuotations(table.get("Country", "NULL")))
-        seller.append(table["Rating"])
-        seller.append(escapeQuotations(table["Seller"]["UserID"])) #not sure if they is right
-        f.write("|".join(map(lambda x:x, seller)))
+        seller.append(table.get("Rating")) #TODO: Rating key does not exist
+        seller.append(escapeQuotations(table["Seller"]["UserID"])) #not sure if this is right
+        f.write(columnSeparator.join(map(lambda x:x, seller)))
         f.write("\n")
 
 """
@@ -111,9 +112,8 @@ Item table is (Currently, First_Bid, Started, Name, Category, ItemID(PK),
 Description, Ends, Buy_Price (Optional), Number_of_bids(Optional))
 """
 def parseItem(table):
-    with open("sellers.dat", "a") as f:
+    with open("items.txt", "a") as f:
         item = []
-        item.append(parseCategories(item))
         item.append(transformDollar(table.get("Currently", "NULL")))
         item.append(transformDollar(table["First_Bid"]))
         item.append(transformDttm(table["Started"]))
@@ -123,52 +123,73 @@ def parseItem(table):
         item.append(table["ItemID"])
         item.append(transformDollar(table.get("Buy_Price", "NULL")))
         item.append(table["Number_of_Bids"])
-        f.write("|".join(map(lambda x:x, item)))
+        f.write(columnSeparator.join(map(lambda x:x, item)))
         f.write("\n")
 
 """
 Categories table is (Category(PK)) and is attached to the Item entity 
 """
 def parseCategories(table):
-    with open("categories.dat", "a") as f: 
+    with open("categories.txt", "a") as f:
         categories = table.get("Category")
-        if categories != None:
-            data_set = set()
-            for category in categories:
-                data = []
-                data.append(escapeQuotations(category["Category"]))
-            f.write("|".join(map(lambda x:x, data_set)))
+        data_set = set()
+        for category in categories:
+            if categories != None:
+                item = []
+                item.append(table["ItemID"])
+                item.append(escapeQuotations(category))
+                data_set.add(item)
+            f.write(columnSeparator.join(map(lambda x:x, data_set)))
             f.write("\n")
 
 """
 Bids table is (Amount(PK), Time(PK)) and uses the Bidder entity 
 attached to each bid through the relationship of Bids On
 """
+
 def parseBids(table):
-    with open("bids.dat", "a") as f:
+    with open("bids.txt", "a") as f:
         bids = table.get("Bids")
+        
         if bids != None:
-            data_set = set()
             for bid in bids:
-                data = []
-                data.append(transformDttm(bid["Bid"]["Time"]))
-                data.append(transformDollar(bid["Bid"]["Amount"]))
-                data.append(parseBidder(bid))
-                data_set.add("|".join(data))
-            f.write("|".join(map(lambda x:x, data_set)))
-            f.write("\n")
+                item = []
+                item.append(table["ItemID"])    #Foreign key, references Item 
+                userID = bid["Bid"]["Bidder"]["UserID"]
+                time = bid["Bid"]["Time"]
+                amount = bid["Bid"]["Amount"]              
+                item.append(escapeQuotations(userID))
+                item.append(transformDttm(time))
+                item.append(transformDollar(amount))
+                f.write(columnSeparator.join(map(lambda x:x, item)))
+                f.write("\n")
+                
 """
 Bidder table is (Location(Optional), Country(Optional), UserID(PK), Rating)
 """
 def parseBidder(table):
-    with open("bidders.dat", "a") as f:
-        bidder = []
-        bidder.append(escapeQuotations(table["UserID"]))
-        bidder.append(table["Rating"])
-        bidder.append(escapeQuotations(table.get("Location", "NULL")))
-        bidder.append(escapeQuotations(table.get("Country", "NULL")))
-        f.write("|".join(map(lambda x:x, bidder)))
-        f.write("\n")
+    with open("bidders.txt", "a") as f:
+        bids = table.get("Bids")
+        if bids != None:
+            for bid in bids:
+                bidder = []
+                bidder.append(escapeQuotations(bid["Bid"]["Bidder"]["UserID"]))
+                bidder.append(escapeQuotations(bid["Bid"]["Bidder"]["Rating"]))
+                
+                try:
+                    location = bid["Bid"]["Bidder"]["Location"]
+
+                except:
+                    location = "NULL"
+                bidder.append(escapeQuotations(location))
+
+                try:
+                    country = bid["Bid"]["Bidder"]["Country"]
+                except:
+                    country = "NULL"
+                bidder.append(escapeQuotations(country))
+                f.write(columnSeparator.join(map(lambda x:x, bidder)))
+                f.write("\n")
 
 """
 1. Escape every instance of a double quote with another double quote.
@@ -176,7 +197,7 @@ def parseBidder(table):
 """
 def escapeQuotations(element):
     if element == None:
-        return element
+        return "NULL"
     return '\"' +  element + '\"' #not sure if this is correct
     
 """
@@ -191,7 +212,7 @@ def main(argv):
     for f in argv[1:]:
         if isJson(f):
             parseJson(f)
-            print "Success parsing " + f
+            print( "Success parsing " + f)
 
 if __name__ == '__main__':
     main(sys.argv)

@@ -1,0 +1,20 @@
+.separator |
+.import items.dat Item
+update Items set Buy_Price = null where Buy_Price = "NULL";
+
+separator |
+.import sellers.dat Sellers
+
+separator |
+.import soldby.dat SoldBy
+
+separator |
+.import categories.dat Categories
+
+separator |
+.import bids.dat Bids
+
+separator |
+.import bidders.dat Bidders
+update Bidders Location = null where Bidders = "NULL";
+update Bidders Country = null where Bidders = "NULL";

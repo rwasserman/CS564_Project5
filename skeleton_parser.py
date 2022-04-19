@@ -93,13 +93,14 @@ def parseJson(json_file):
             parseBidder(item)
             parseItem(item)
             parseCategories(item)
+            parseSoldBy(item)
             pass
 """
 Seller table is (Location, Country, Rating, UserID(PK))
 """
 def parseSeller(table):
 
-    with open("sellers.txt", "a") as f:
+    with open("sellers.dat", "a") as f:
         seller = []
         seller.append(escapeQuotations(table.get("Location", "NULL")))
         seller.append(escapeQuotations(table.get("Country", "NULL")))
@@ -117,7 +118,7 @@ Item table is (Currently, First_Bid, Started, Name, Category, ItemID(PK),
 Description, Ends, Buy_Price (Optional), Number_of_bids(Optional))
 """
 def parseItem(table):
-    with open("items.txt", "a") as f:
+    with open("items.dat", "a") as f:
         item = []
         item.append(transformDollar(table.get("Currently", "NULL")))
         item.append(transformDollar(table["First_Bid"]))
@@ -135,7 +136,7 @@ def parseItem(table):
 Categories table is (Category(PK)) and is attached to the Item entity 
 """
 def parseCategories(table):
-    with open("categories.txt", "a") as f:
+    with open("categories.dat", "a") as f:
         categories = table.get("Category")
         for category in categories:
             if categories != None:
@@ -151,7 +152,7 @@ attached to each bid through the relationship of Bids On
 """
 
 def parseBids(table):
-    with open("bids.txt", "a") as f:
+    with open("bids.dat", "a") as f:
         bids = table.get("Bids")
         
         if bids != None:
@@ -171,7 +172,7 @@ def parseBids(table):
 Bidder table is (Location(Optional), Country(Optional), UserID(PK), Rating)
 """
 def parseBidder(table):
-    with open("bidders.txt", "a") as f:
+    with open("bidders.dat", "a") as f:
         bids = table.get("Bids")
         if bids != None:
             for bid in bids:
@@ -194,14 +195,25 @@ def parseBidder(table):
                 f.write(columnSeparator.join(map(lambda x:x, bidder)))
                 f.write("\n")
 
+def parseSoldBy(table):
+    with open("soldby.dat", "a") as f:
+        item = []
+        item.append(escapeQuotations(table["Seller"]["UserID"]))
+        item.append(escapeQuotations(table["ItemID"]))
+        f.write(columnSeparator.join(map(lambda x:x, item)))
+        f.write("\n")
+
 """
 1. Escape every instance of a double quote with another double quote.
 2. Surround all strings with double quotes.
 """
 def escapeQuotations(element):
-    if element == None:
+    if element != None:
+        BASE_QUOTES = '\"'
+        stringBuilder = BASE_QUOTES + element.replace('\"', '\"\"') + BASE_QUOTES
+        return stringBuilder
+    else:
         return "NULL"
-    return '\"' +  element + '\"' #not sure if this is correct
     
 """
 Loops through each json files provided on the command line and passes each file

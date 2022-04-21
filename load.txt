@@ -16,5 +16,5 @@ update Items set Buy_Price_Var = null where Buy_Price_Var = "NULL";
 
 .separator |
 .import bidders.dat Bidders
-update Bidders Location_Var = null where Location_Var = "NULL";
-update Bidders Country_Var = null where Country_Var = "NULL";
+update Bidders set Location_Var = null where Location_Var = "NULL";                                                                    
+update Bidders set Country_Var = null where Country_Var = "NULL";

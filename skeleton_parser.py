@@ -24,58 +24,105 @@ you; the rest is up to you!
 Happy parsing!
 """
 
-from ast import expr_context
 import sys
 from json import loads
 from re import sub
 import os
 
 columnSeparator = "|"
+SELLER_USER_ID_DICTIONARY = {}
+BUYER_USER_ID_DICTIONARY = {}
 
 # Dictionary of months used for date transformation
 MONTHS = {'Jan':'01','Feb':'02','Mar':'03','Apr':'04','May':'05','Jun':'06',\
         'Jul':'07','Aug':'08','Sep':'09','Oct':'10','Nov':'11','Dec':'12'}
 
-"""
-Returns true if a file ends in .json
-"""
+
 def isJson(f):
+    """
+    Returns true if a file ends in .json
+    """
     return len(f) > 5 and f[-5:] == '.json'
 
-"""
-Converts month to a number, e.g. 'Dec' to '12'
-"""
+def checkSellerIDIsUnique(sellerID):
+    '''
+    For a given userID assigned to a seller, make sure that the seller is not
+    a duplicate.
+    In summary, filters out duplicate sellers.
+
+    @param sellerID, which represents the userID of a seller.
+    '''
+    try:
+        if SELLER_USER_ID_DICTIONARY[sellerID] == "SELLER":
+            #already inserted
+            return False
+        else:
+            #not already inserted 
+            SELLER_USER_ID_DICTIONARY[sellerID] = "SELLER"
+            return True
+    except:
+        #another case where it is not already inserted
+        SELLER_USER_ID_DICTIONARY[sellerID] = "SELLER"
+        return True
+
+def checkBuyerIDIsUnique(buyerID):
+    '''
+    For a given userID assigned to a buyer, make sure the buyer is not a duplicate.
+    In summary, filters out duplicate buyers.
+
+    @param buyerID, representing the userID of a buyer
+    '''
+    try:
+        if BUYER_USER_ID_DICTIONARY[buyerID] == "BUYER":
+            #already inserted
+            return False
+        else:
+            #not already inserted 
+            BUYER_USER_ID_DICTIONARY[buyerID] = "BUYER"
+            return True
+    except:
+        #another case where it is not already inserted
+        BUYER_USER_ID_DICTIONARY[buyerID] = "BUYER"
+        return True
+
+
 def transformMonth(mon):
+    """
+    Converts month to a number, e.g. 'Dec' to '12'
+    """
     if mon in MONTHS:
         return MONTHS[mon]
     else:
         return mon
 
-"""
-Transforms a timestamp from Mon-DD-YY HH:MM:SS to YYYY-MM-DD HH:MM:SS
-"""
+
 def transformDttm(dttm):
+    """
+    Transforms a timestamp from Mon-DD-YY HH:MM:SS to YYYY-MM-DD HH:MM:SS
+    """
     dttm = dttm.strip().split(' ')
     dt = dttm[0].split('-')
     date = '20' + dt[2] + '-'
     date += transformMonth(dt[0]) + '-' + dt[1]
     return date + ' ' + dttm[1]
 
-"""
-Transform a dollar value amount from a string like $3,453.23 to XXXXX.xx
-"""
+
 
 def transformDollar(money):
+    """
+    Transform a dollar value amount from a string like $3,453.23 to XXXXX.xx
+    """
     if money == None or len(money) == 0:
         return money
     return sub(r'[^\d.]', '', money)
 
-"""
-Parses a single json file. Currently, there's a loop that iterates over each
-item in the data set. Your job is to extend this functionality to create all
-of the necessary SQL tables for your database.
-"""
+
 def parseJson(json_file):
+    """
+    Parses a single json file. Currently, there's a loop that iterates over each
+    item in the data set. Your job is to extend this functionality to create all
+    of the necessary SQL tables for your database.
+    """
     with open(json_file, 'r') as f:
         items = loads(f.read())['Items'] # creates a Python dictionary of Items for the supplied json file
         for item in items:
@@ -95,32 +142,35 @@ def parseJson(json_file):
             parseCategories(item)
             parseSoldBy(item)
             pass
-"""
-Seller table is (Location, Country, Rating, UserID(PK))
-"""
-def parseSeller(table):
 
+def parseSeller(table):
+    """
+    Seller table is (Location, Country, Rating, UserID(PK))
+    """
     with open("sellers.dat", "a") as f:
         seller = []
         seller.append(escapeQuotations(table.get("Location", "NULL")))
         seller.append(escapeQuotations(table.get("Country", "NULL")))
-        try:
-            rating = table["Seller"]["Rating"]
-        except:
-            rating = escapeQuotations("NULL")
-        seller.append(rating) #TODO: Rating key does not exist
+        rating = table["Seller"]["Rating"]
+        seller.append(escapeQuotations(rating)) #TODO: Rating key does not exist
         seller.append(escapeQuotations(table["Seller"]["UserID"])) #not sure if this is right
-        f.write(columnSeparator.join(map(lambda x:x, seller)))
-        f.write("\n")
 
-"""
-Item table is (Currently, First_Bid, Started, Name, Category, ItemID(PK), 
-Description, Ends, Buy_Price (Optional), Number_of_bids(Optional))
-"""
+        # Only write the seller info if it is a unique userid
+        if (checkSellerIDIsUnique(table["Seller"]["UserID"])):
+            f.write(columnSeparator.join(map(lambda x:x, seller)))
+            f.write("\n")
+            
+        
+
+
 def parseItem(table):
+    """
+    Item table is (Currently, First_Bid, Started, Name, Category, ItemID(PK), 
+    Description, Ends, Buy_Price (Optional), Number_of_bids(Optional))
+    """
     with open("items.dat", "a") as f:
         item = []
-        item.append(transformDollar(table.get("Currently", "NULL")))
+        item.append(transformDollar(table["Currently"]))
         item.append(transformDollar(table["First_Bid"]))
         item.append(transformDttm(table["Started"]))
         item.append(transformDttm(table["Ends"]))
@@ -132,26 +182,32 @@ def parseItem(table):
         f.write(columnSeparator.join(map(lambda x:x, item)))
         f.write("\n")
 
-"""
-Categories table is (Category(PK)) and is attached to the Item entity 
-"""
+
 def parseCategories(table):
+    """
+    Categories table is (Category(PK)) and is attached to the Item entity 
+    """
     with open("categories.dat", "a") as f:
         categories = table.get("Category")
         for category in categories:
             if categories != None:
                 item = []
-                item.append(table["ItemID"])
-                item.append(escapeQuotations(category))
-                f.write(columnSeparator.join(map(lambda x:x, item)))
-                f.write("\n")
+                try:
+                    item.append(table["ItemID"])
+                    item.append(escapeQuotations(category))
+                    f.write(columnSeparator.join(map(lambda x:x, item)))
+                    f.write("\n")
+                except:
+                    pass
+                
 
-"""
-Bids table is (Amount(PK), Time(PK)) and uses the Bidder entity 
-attached to each bid through the relationship of Bids On
-"""
+
 
 def parseBids(table):
+    """
+    Bids table is (Amount(PK), Time(PK)) and uses the Bidder entity 
+    attached to each bid through the relationship of Bids On
+    """
     with open("bids.dat", "a") as f:
         bids = table.get("Bids")
         
@@ -168,17 +224,18 @@ def parseBids(table):
                 f.write(columnSeparator.join(map(lambda x:x, item)))
                 f.write("\n")
                 
-"""
-Bidder table is (Location(Optional), Country(Optional), UserID(PK), Rating)
-"""
+
 def parseBidder(table):
+    """
+    Bidder table is (Location(Optional), Country(Optional), UserID(PK), Rating)
+    """
     with open("bidders.dat", "a") as f:
         bids = table.get("Bids")
         if bids != None:
             for bid in bids:
                 bidder = []
                 bidder.append(escapeQuotations(bid["Bid"]["Bidder"]["UserID"]))
-                bidder.append(escapeQuotations(bid["Bid"]["Bidder"]["Rating"]))
+                bidder.append(bid["Bid"]["Bidder"]["Rating"])
                 
                 try:
                     location = bid["Bid"]["Bidder"]["Location"]
@@ -192,10 +249,16 @@ def parseBidder(table):
                 except:
                     country = "NULL"
                 bidder.append(escapeQuotations(country))
-                f.write(columnSeparator.join(map(lambda x:x, bidder)))
-                f.write("\n")
+
+                # Only write the bidder info if the UserId is not already in the file
+                if(checkBuyerIDIsUnique(bid["Bid"]["Bidder"]["UserID"])):
+                    f.write(columnSeparator.join(map(lambda x:x, bidder)))
+                    f.write("\n")
 
 def parseSoldBy(table):
+    '''
+    Parse the @param table 
+    '''
     with open("soldby.dat", "a") as f:
         item = []
         item.append(escapeQuotations(table["Seller"]["UserID"]))
@@ -203,11 +266,12 @@ def parseSoldBy(table):
         f.write(columnSeparator.join(map(lambda x:x, item)))
         f.write("\n")
 
-"""
-1. Escape every instance of a double quote with another double quote.
-2. Surround all strings with double quotes.
-"""
+
 def escapeQuotations(element):
+    """
+    1. Escape every instance of a double quote with another double quote.
+    2. Surround all strings with double quotes.
+    """
     if element != None:
         BASE_QUOTES = '\"'
         stringBuilder = BASE_QUOTES + element.replace('\"', '\"\"') + BASE_QUOTES
@@ -215,11 +279,12 @@ def escapeQuotations(element):
     else:
         return "NULL"
     
-"""
-Loops through each json files provided on the command line and passes each file
-to the parser
-"""
+
 def main(argv):
+    """
+    Loops through each json files provided on the command line and passes each file
+    to the parser
+    """
     if len(argv) < 2:
         print >> sys.stderr, 'Usage: python skeleton_json_parser.py <path to json files>'
         sys.exit(1)
